@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Debiti e Crediti</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e5e7eb;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 2rem;
+        }
+        .card {
+            background-color: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            border: 1px solid #f3f4f6;
+            transition: transform 0.3s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.85rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            outline: none;
+            transition: all 0.3s;
+            background-color: #f9fafb;
+        }
+        .form-input:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+        .btn {
+            padding: 0.85rem 1.75rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .btn-debt {
+            background: linear-gradient(45deg, #8b5cf6, #7c3aed); /* Viola */
+            border: 1px solid #7c3aed;
+        }
+        .btn-debt:hover {
+            background: linear-gradient(45deg, #7c3aed, #6d28d9);
+        }
+        .btn-credit {
+            background: linear-gradient(45deg, #0d9488, #0f766e); /* Verde acqua */
+            border: 1px solid #0f766e;
+        }
+        .btn-credit:hover {
+            background: linear-gradient(45deg, #0f766e, #115e59);
+        }
+        .btn-delete, .btn-secondary {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+        }
+        .btn-delete:hover, .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+        .relationship-card {
+            background-color: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border-left: 6px solid;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .relationship-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .relationship-card.positive {
+            border-color: #10b981;
+        }
+        .relationship-card.negative {
+            border-color: #ef4444;
+        }
+        .total-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .total-box:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+        }
+        .total-box.positive {
+            background: linear-gradient(45deg, #10b981, #059669);
+        }
+        .total-box.negative {
+            background: linear-gradient(45deg, #ef4444, #dc2626);
+        }
+        .list-item {
+            background-color: #ffffff;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .list-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+        .exchange-rate {
+            background-color: #f9fafb;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            font-size: 0.875rem;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body class="bg-gray-200 flex items-center justify-center min-h-screen">
+
+    <div class="container space-y-8">
+
+        <!-- Header -->
+        <header class="text-center">
+            <h1 class="text-4xl font-extrabold text-gray-800">Gestione Debiti e Crediti</h1>
+            <p class="mt-2 text-lg text-gray-500">Tieni traccia dei soldi che devi o ti devono gli amici.</p>
+        </header>
+
+        <!-- Sezione Calcolatore Totale -->
+        <div class="card p-6 md:p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Riepilogo Totale</h2>
+            <div class="flex flex-col md:flex-row justify-around items-center space-y-4 md:space-y-0 md:space-x-4">
+                <div id="credits-box" class="total-box flex-1 positive">
+                    <p class="text-sm font-light">Totale Crediti (Ti devono)</p>
+                    <span id="total-credits" class="text-4xl mt-1">€0.00</span>
+                </div>
+                <div id="debts-box" class="total-box flex-1 negative">
+                    <p class="text-sm font-light">Totale Debiti (Devi)</p>
+                    <span id="total-debts" class="text-4xl mt-1">€0.00</span>
+                </div>
+            </div>
+            <div class="flex justify-center mt-6">
+                <div id="exchange-rate-display" class="exchange-rate hidden">
+                    Caricamento tasso di cambio...
+                </div>
+            </div>
+        </div>
+
+        <!-- Sezione Debiti e Crediti -->
+        <div class="space-y-4">
+            <!-- Add/Edit Relationship Form -->
+            <div id="add-form-section" class="card p-6 md:p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4" id="form-title">Aggiungi Transazione</h2>
+                <form id="relationship-form" class="space-y-4">
+                    <input type="hidden" id="edit-id">
+                    <div>
+                        <label for="person" class="block text-sm font-medium text-gray-700">Nome Persona</label>
+                        <input type="text" id="person" class="form-input mt-1" placeholder="Es. Mario" required>
+                    </div>
+                    <div>
+                        <label for="rel_description" class="block text-sm font-medium text-gray-700">Descrizione</label>
+                        <input type="text" id="rel_description" class="form-input mt-1" placeholder="Es. Pranzo insieme" required>
+                    </div>
+                    <div>
+                        <label for="rel_amount" class="block text-sm font-medium text-gray-700">Importo (€)</label>
+                        <input type="number" id="rel_amount" class="form-input mt-1" placeholder="Inserisci un importo in euro" required>
+                    </div>
+                    <div class="flex space-x-4" id="form-buttons">
+                        <button type="button" id="add-credit-btn" class="btn btn-credit flex-1">Mi deve</button>
+                        <button type="button" id="add-debt-btn" class="btn btn-debt flex-1">Devo</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Transaction History and Controls -->
+            <div id="history-section" class="card p-6 md:p-8">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 space-y-4 md:space-y-0 md:space-x-4">
+                    <h2 id="history-title" class="text-2xl font-bold text-gray-800">Storico Relazioni</h2>
+                    <input type="text" id="search-input" class="form-input flex-1" placeholder="Cerca per persona o descrizione...">
+                    <button id="show-all-btn" class="btn btn-secondary px-4 py-2 text-sm hidden">Mostra Tutto</button>
+                </div>
+                <ul id="relationship-list" class="space-y-4">
+                    <!-- Transactions will be added here -->
+                </ul>
+            </div>
+
+            <!-- Relationship Summary -->
+            <div id="summary-section" class="card p-6 md:p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Riepilogo Relazioni</h2>
+                <ul id="relationship-summary-list" class="space-y-4">
+                    <!-- Summary will be added here -->
+                </ul>
+            </div>
+
+            <!-- Export/Import Section -->
+            <div id="data-management-section" class="card p-6 md:p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Gestione Dati</h2>
+                <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                    <button id="export-btn" class="btn btn-secondary flex-1">Esporta Dati</button>
+                    <div class="relative flex-1">
+                        <label for="import-file" class="btn btn-secondary w-full text-center block cursor-pointer">Importa Dati</label>
+                        <input type="file" id="import-file" class="hidden" accept=".json">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
+            <div class="bg-white p-8 rounded-xl shadow-lg w-96">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Conferma Eliminazione</h3>
+                <p class="text-gray-600 mb-6">Sei sicuro di voler eliminare questa transazione?</p>
+                <div class="flex justify-end space-x-4">
+                    <button id="cancel-btn" class="btn px-4 py-2 bg-gray-300 text-gray-700 hover:bg-gray-400">Annulla</button>
+                    <button id="confirm-btn" class="btn px-4 py-2 bg-red-500 text-white hover:bg-red-600">Elimina</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Message Box for errors -->
+        <div id="custom-message-box" class="hidden fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+            <p id="custom-message-text"></p>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // UI elements for the form
+            const personInput = document.getElementById('person');
+            const relDescriptionInput = document.getElementById('rel_description');
+            const relAmountInput = document.getElementById('rel_amount');
+            const formButtons = document.getElementById('form-buttons');
+            const formTitle = document.getElementById('form-title');
+            const editIdInput = document.getElementById('edit-id');
+
+            // UI elements for display
+            const relationshipList = document.getElementById('relationship-list');
+            const relationshipSummaryList = document.getElementById('relationship-summary-list');
+            const totalCreditsDisplay = document.getElementById('total-credits');
+            const totalDebtsDisplay = document.getElementById('total-debts');
+
+            // New elements for filtering, export/import
+            const creditsBox = document.getElementById('credits-box');
+            const debtsBox = document.getElementById('debts-box');
+            const showAllBtn = document.getElementById('show-all-btn');
+            const historyTitle = document.getElementById('history-title');
+            const exchangeRateDisplay = document.getElementById('exchange-rate-display');
+            const searchInput = document.getElementById('search-input');
+            const exportBtn = document.getElementById('export-btn');
+            const importFile = document.getElementById('import-file');
+
+            // Confirmation modal
+            const modal = document.getElementById('modal');
+            const confirmBtn = document.getElementById('confirm-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+
+            let relationships = JSON.parse(localStorage.getItem('relationships')) || [];
+            let itemToDelete = null;
+            let eurToUsdRate = 0;
+
+            // --- Save and Load Functions ---
+            const saveRelationships = () => {
+                localStorage.setItem('relationships', JSON.stringify(relationships));
+            };
+
+            // --- Render Functions ---
+            const renderCalculations = () => {
+                let totalCredits = 0;
+                let totalDebts = 0;
+
+                relationships.forEach(item => {
+                    if (item.type === 'credit') {
+                        totalCredits += item.amount;
+                    } else {
+                        totalDebts += item.amount;
+                    }
+                });
+
+                totalCreditsDisplay.textContent = `€${totalCredits.toFixed(2)}`;
+                totalDebtsDisplay.textContent = `€${totalDebts.toFixed(2)}`;
+            };
+
+            const renderRelationshipHistory = (filteredItems = null) => {
+                relationshipList.innerHTML = '';
+                const itemsToRender = filteredItems || [...relationships].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                if (itemsToRender.length === 0) {
+                    relationshipList.innerHTML = `<p class="text-center text-gray-500">Nessuna transazione trovata.</p>`;
+                }
+
+                itemsToRender.forEach(item => {
+                    const isCredit = item.type === 'credit';
+                    const amountInUsd = eurToUsdRate ? item.amount * eurToUsdRate : null;
+                    
+                    const li = document.createElement('li');
+                    li.classList.add('list-item', 'flex', 'justify-between', 'items-center', 'transition-all', 'duration-200');
+                    
+                    li.innerHTML = `
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800">${item.person}</p>
+                            <p class="text-sm text-gray-600">${item.description}</p>
+                            <span class="text-xs text-gray-400 block mt-1">${new Date(item.date).toLocaleDateString()}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-bold text-lg ${isCredit ? 'text-green-700' : 'text-red-700'} block">
+                                ${isCredit ? '+' : '-'}€${item.amount.toFixed(2)}
+                            </span>
+                            ${amountInUsd ? `<span class="text-sm text-gray-500 block">${isCredit ? '+' : '-'} $${amountInUsd.toFixed(2)}</span>` : ''}
+                        </div>
+                        <div class="flex space-x-2 ml-4">
+                            <button class="edit-btn p-2 rounded-full bg-gray-200 hover:bg-yellow-500 hover:text-white transition-colors duration-200">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zm-5.045 6.088l-1.636 1.636-3.536 3.536 1.414 1.414 3.536-3.536 1.636-1.636-1.414-1.414zM11 5a1 1 0 100 2 1 1 0 000-2z"></path></svg>
+                            </button>
+                            <button class="delete-btn p-2 rounded-full bg-gray-200 hover:bg-red-500 hover:text-white transition-colors duration-200">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clip-rule="evenodd"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                    li.querySelector('.delete-btn').addEventListener('click', () => {
+                        itemToDelete = item;
+                        modal.classList.remove('hidden');
+                    });
+                    li.querySelector('.edit-btn').addEventListener('click', () => {
+                        editRelationship(item);
+                    });
+                    relationshipList.appendChild(li);
+                });
+            };
+
+            const renderRelationshipSummary = () => {
+                relationshipSummaryList.innerHTML = '';
+                const summary = {};
+
+                relationships.forEach(item => {
+                    if (!summary[item.person]) {
+                        summary[item.person] = 0;
+                    }
+                    if (item.type === 'credit') {
+                        summary[item.person] += item.amount;
+                    } else {
+                        summary[item.person] -= item.amount;
+                    }
+                });
+
+                if (Object.keys(summary).length === 0) {
+                    relationshipSummaryList.innerHTML = `<p class="text-center text-gray-500">Nessun riepilogo da mostrare.</p>`;
+                    return;
+                }
+
+                const sortedSummary = Object.entries(summary).sort(([, a], [, b]) => b - a);
+
+                sortedSummary.forEach(([person, balance]) => {
+                    const isCredit = balance >= 0;
+
+                    const li = document.createElement('li');
+                    li.classList.add('relationship-card', isCredit ? 'positive' : 'negative');
+
+                    li.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <p class="text-lg font-bold text-gray-800">${person}</p>
+                                <p class="text-sm text-gray-500">${isCredit ? 'Mi deve' : 'Devo'}</p>
+                            </div>
+                            <span class="font-bold text-2xl ${isCredit ? 'text-green-600' : 'text-red-600'}">
+                                €${Math.abs(balance).toFixed(2)}
+                            </span>
+                        </div>
+                    `;
+                    relationshipSummaryList.appendChild(li);
+                });
+            };
+
+            // --- Core Logic ---
+            const addRelationship = (type) => {
+                const person = personInput.value.trim();
+                const relDescription = relDescriptionInput.value.trim();
+                const relAmount = parseFloat(relAmountInput.value);
+
+                if (person && relDescription && relAmount && !isNaN(relAmount) && relAmount > 0) {
+                    const newRelationship = {
+                        id: Date.now(),
+                        person,
+                        description: relDescription,
+                        amount: relAmount,
+                        type,
+                        date: new Date().toISOString()
+                    };
+                    relationships.unshift(newRelationship);
+                    saveRelationships();
+                    resetForm();
+                } else {
+                    displayMessage("Per favore, inserisci tutti i campi validi (Persona, Descrizione, Importo > 0).");
+                }
+            };
+            
+            const editRelationship = (item) => {
+                // Populate the form with the item's data
+                personInput.value = item.person;
+                relDescriptionInput.value = item.description;
+                relAmountInput.value = item.amount;
+                editIdInput.value = item.id;
+                
+                // Change the form title and buttons
+                formTitle.textContent = "Modifica Transazione";
+                formButtons.innerHTML = `
+                    <button type="button" id="update-btn" class="btn btn-debt flex-1">Aggiorna</button>
+                    <button type="button" id="cancel-edit-btn" class="btn btn-secondary flex-1">Annulla Modifica</button>
+                `;
+                
+                document.getElementById('update-btn').addEventListener('click', handleUpdate);
+                document.getElementById('cancel-edit-btn').addEventListener('click', resetForm);
+            };
+
+            const handleUpdate = () => {
+                const idToUpdate = parseInt(editIdInput.value, 10);
+                const person = personInput.value.trim();
+                const relDescription = relDescriptionInput.value.trim();
+                const relAmount = parseFloat(relAmountInput.value);
+
+                if (person && relDescription && relAmount && !isNaN(relAmount) && relAmount > 0) {
+                    const itemIndex = relationships.findIndex(item => item.id === idToUpdate);
+                    if (itemIndex !== -1) {
+                        relationships[itemIndex].person = person;
+                        relationships[itemIndex].description = relDescription;
+                        relationships[itemIndex].amount = relAmount;
+                        saveRelationships();
+                        resetForm();
+                    } else {
+                         displayMessage("Transazione non trovata per l'aggiornamento.");
+                    }
+                } else {
+                    displayMessage("Per favore, inserisci tutti i campi validi (Persona, Descrizione, Importo > 0).");
+                }
+            };
+
+            const resetForm = () => {
+                personInput.value = '';
+                relDescriptionInput.value = '';
+                relAmountInput.value = '';
+                editIdInput.value = '';
+                formTitle.textContent = "Aggiungi Transazione";
+                formButtons.innerHTML = `
+                    <button type="button" id="add-credit-btn" class="btn btn-credit flex-1">Mi deve</button>
+                    <button type="button" id="add-debt-btn" class="btn btn-debt flex-1">Devo</button>
+                `;
+                addEventListeners(); // Re-attach listeners to new buttons
+                renderCalculations();
+                renderRelationshipHistory();
+                renderRelationshipSummary();
+            };
+
+            const handleDelete = () => {
+                if (!itemToDelete) return;
+                
+                relationships = relationships.filter(t => t.id !== itemToDelete.id);
+                saveRelationships();
+                renderCalculations();
+                renderRelationshipHistory();
+                renderRelationshipSummary();
+                
+                modal.classList.add('hidden');
+                itemToDelete = null;
+            };
+            
+            // --- Custom Message Box ---
+            const displayMessage = (message, isError = true) => {
+                const messageBox = document.getElementById('custom-message-box');
+                const messageText = document.getElementById('custom-message-text');
+                
+                messageText.textContent = message;
+                messageBox.classList.remove('hidden', 'bg-red-500', 'bg-green-500');
+                messageBox.classList.add(isError ? 'bg-red-500' : 'bg-green-500');
+                messageBox.classList.add('animate-fade-in');
+
+                setTimeout(() => {
+                    messageBox.classList.remove('animate-fade-in');
+                    messageBox.classList.add('animate-fade-out');
+                    messageBox.addEventListener('animationend', () => {
+                        messageBox.classList.add('hidden');
+                        messageBox.classList.remove('animate-fade-out');
+                    }, { once: true });
+                }, 3000);
+            };
+
+            // --- API Tassi di Cambio ---
+            const fetchExchangeRate = async () => {
+                exchangeRateDisplay.classList.remove('hidden');
+                exchangeRateDisplay.textContent = 'Caricamento tasso di cambio...';
+                try {
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    const systemPrompt = "Act as a financial data provider. The user wants the current EUR to USD exchange rate. Respond with only the numerical value as a float, with no other text, punctuation, or explanation. For example, '1.08'.";
+                    const userQuery = "What is the current EUR to USD exchange rate?";
+                    
+                    const payload = {
+                        contents: [{ parts: [{ text: userQuery }] }],
+                        tools: [{ "google_search": {} }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] },
+                    };
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`API error: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    const rate = parseFloat(text);
+                    
+                    if (!isNaN(rate)) {
+                        eurToUsdRate = rate;
+                        exchangeRateDisplay.textContent = `1 EUR = $${eurToUsdRate.toFixed(2)}`;
+                        // Re-render to show USD amounts
+                        renderRelationshipHistory();
+                    } else {
+                        throw new Error('Invalid rate format received from API');
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch exchange rate:', error);
+                    exchangeRateDisplay.textContent = 'Tasso di cambio non disponibile.';
+                }
+            };
+
+            // --- Data Management Functions (Export/Import) ---
+            const exportData = () => {
+                const dataStr = JSON.stringify(relationships, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `dati_debiti_crediti_${new Date().toLocaleDateString()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                displayMessage("Dati esportati con successo!", false);
+            };
+
+            const importData = (event) => {
+                const file = event.target.files[0];
+                if (!file) {
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (Array.isArray(importedData) && importedData.every(item => item.id && item.person && item.amount && item.type)) {
+                            relationships = importedData;
+                            saveRelationships();
+                            resetForm();
+                            displayMessage("Dati importati con successo!", false);
+                        } else {
+                            displayMessage("Formato file non valido. Selezionare un file JSON valido.");
+                        }
+                    } catch (error) {
+                        displayMessage("Errore durante la lettura del file. Assicurati che sia un JSON valido.");
+                        console.error("Import error:", error);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            // --- Event Listeners ---
+            const addEventListeners = () => {
+                document.getElementById('add-credit-btn')?.addEventListener('click', () => addRelationship('credit'));
+                document.getElementById('add-debt-btn')?.addEventListener('click', () => addRelationship('debt'));
+            };
+
+            addEventListeners();
+            confirmBtn.addEventListener('click', handleDelete);
+            cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+
+            creditsBox.addEventListener('click', () => {
+                renderRelationshipHistory(relationships.filter(item => item.type === 'credit'));
+                historyTitle.textContent = 'Storico Crediti';
+                showAllBtn.classList.remove('hidden');
+            });
+
+            debtsBox.addEventListener('click', () => {
+                renderRelationshipHistory(relationships.filter(item => item.type === 'debt'));
+                historyTitle.textContent = 'Storico Debiti';
+                showAllBtn.classList.remove('hidden');
+            });
+            
+            showAllBtn.addEventListener('click', () => {
+                renderRelationshipHistory();
+                historyTitle.textContent = 'Storico Relazioni';
+                showAllBtn.classList.add('hidden');
+            });
+
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                if (searchTerm.length > 0) {
+                    const filtered = relationships.filter(item => 
+                        item.person.toLowerCase().includes(searchTerm) || 
+                        item.description.toLowerCase().includes(searchTerm)
+                    );
+                    renderRelationshipHistory(filtered);
+                } else {
+                    renderRelationshipHistory();
+                }
+            });
+
+            exportBtn.addEventListener('click', exportData);
+            importFile.addEventListener('change', importData);
+
+            // Initial render
+            renderCalculations();
+            renderRelationshipHistory();
+            renderRelationshipSummary();
+            fetchExchangeRate();
+        });
+    </script>
+</body>
+</html>
