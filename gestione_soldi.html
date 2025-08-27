@@ -126,14 +126,6 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
         }
-        .exchange-rate {
-            background-color: #f9fafb;
-            padding: 0.75rem 1.5rem;
-            border-radius: 9999px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            font-size: 0.875rem;
-            color: #4b5563;
-        }
     </style>
 </head>
 <body class="bg-gray-200 flex items-center justify-center min-h-screen">
@@ -157,11 +149,6 @@
                 <div id="debts-box" class="total-box flex-1 negative">
                     <p class="text-sm font-light">Totale Debiti (Devi)</p>
                     <span id="total-debts" class="text-4xl mt-1">€0.00</span>
-                </div>
-            </div>
-            <div class="flex justify-center mt-6">
-                <div id="exchange-rate-display" class="exchange-rate hidden">
-                    Caricamento tasso di cambio...
                 </div>
             </div>
         </div>
@@ -265,7 +252,6 @@
             const debtsBox = document.getElementById('debts-box');
             const showAllBtn = document.getElementById('show-all-btn');
             const historyTitle = document.getElementById('history-title');
-            const exchangeRateDisplay = document.getElementById('exchange-rate-display');
             const searchInput = document.getElementById('search-input');
             const exportBtn = document.getElementById('export-btn');
             const importFile = document.getElementById('import-file');
@@ -277,8 +263,7 @@
 
             let relationships = JSON.parse(localStorage.getItem('relationships')) || [];
             let itemToDelete = null;
-            let eurToUsdRate = 0;
-
+            
             // --- Save and Load Functions ---
             const saveRelationships = () => {
                 localStorage.setItem('relationships', JSON.stringify(relationships));
@@ -311,7 +296,6 @@
 
                 itemsToRender.forEach(item => {
                     const isCredit = item.type === 'credit';
-                    const amountInUsd = eurToUsdRate ? item.amount * eurToUsdRate : null;
                     
                     const li = document.createElement('li');
                     li.classList.add('list-item', 'flex', 'justify-between', 'items-center', 'transition-all', 'duration-200');
@@ -326,7 +310,6 @@
                             <span class="font-bold text-lg ${isCredit ? 'text-green-700' : 'text-red-700'} block">
                                 ${isCredit ? '+' : '-'}€${item.amount.toFixed(2)}
                             </span>
-                            ${amountInUsd ? `<span class="text-sm text-gray-500 block">${isCredit ? '+' : '-'} $${amountInUsd.toFixed(2)}</span>` : ''}
                         </div>
                         <div class="flex space-x-2 ml-4">
                             <button class="edit-btn p-2 rounded-full bg-gray-200 hover:bg-yellow-500 hover:text-white transition-colors duration-200">
@@ -503,35 +486,6 @@
                 }, 3000);
             };
 
-            // --- API Tassi di Cambio ---
-            const fetchExchangeRate = async () => {
-                exchangeRateDisplay.classList.remove('hidden');
-                exchangeRateDisplay.textContent = 'Caricamento tasso di cambio...';
-                try {
-                    const apiUrl = "https://api.exchangerate-api.com/v4/latest/EUR";
-                    const response = await fetch(apiUrl);
-                    
-                    if (!response.ok) {
-                        throw new Error(`API error: ${response.statusText}`);
-                    }
-                    
-                    const data = await response.json();
-                    const rate = data.rates.USD;
-                    
-                    if (rate) {
-                        eurToUsdRate = rate;
-                        exchangeRateDisplay.textContent = `1 EUR = $${eurToUsdRate.toFixed(2)}`;
-                        // Re-render to show USD amounts
-                        renderRelationshipHistory();
-                    } else {
-                        throw new Error('Invalid rate format received from API');
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch exchange rate:', error);
-                    exchangeRateDisplay.textContent = 'Tasso di cambio non disponibile.';
-                }
-            };
-
             // --- Data Management Functions (Export/Import) ---
             const exportData = () => {
                 const dataStr = JSON.stringify(relationships, null, 2);
@@ -618,7 +572,6 @@
             renderCalculations();
             renderRelationshipHistory();
             renderRelationshipSummary();
-            fetchExchangeRate();
         });
     </script>
 </body>
